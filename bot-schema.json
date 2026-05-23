@@ -1,0 +1,150 @@
+{
+  "kind": "CopilotStudioBotDefinition",
+  "displayName": "HelpDesk Copilot",
+  "description": "IT support copilot built with Microsoft Copilot Studio and Power Virtual Agents. Handles ticket submission, status checks, and common issue resolution.",
+  "language": "en-US",
+  "topics": [
+    {
+      "id": "topic_greeting",
+      "name": "Greeting",
+      "triggerPhrases": ["hello", "hi", "I need help", "support", "IT help"],
+      "nodes": [
+        {
+          "id": "n1",
+          "type": "SendMessage",
+          "message": "Hi! I am the HelpDesk Copilot. I can help you submit a ticket or check the status of an existing one."
+        },
+        {
+          "id": "n2",
+          "type": "Question",
+          "question": "What would you like to do?",
+          "responseType": "MultipleChoice",
+          "options": ["Submit a new ticket", "Check ticket status"],
+          "outputVariable": "UserChoice"
+        },
+        {
+          "id": "n3",
+          "type": "Condition",
+          "conditions": [
+            { "expression": "UserChoice == 'Submit a new ticket'", "targetTopicId": "topic_create_ticket" },
+            { "expression": "else", "targetTopicId": "topic_ticket_status" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "topic_create_ticket",
+      "name": "Create Ticket",
+      "triggerPhrases": ["create a ticket", "submit a ticket", "log an issue", "report a problem", "open a ticket"],
+      "nodes": [
+        {
+          "id": "n1",
+          "type": "Question",
+          "question": "Briefly describe the issue.",
+          "responseType": "FreeText",
+          "outputVariable": "TicketTitle"
+        },
+        {
+          "id": "n2",
+          "type": "Question",
+          "question": "Any more detail? Include error messages or steps already tried.",
+          "responseType": "FreeText",
+          "outputVariable": "TicketDescription"
+        },
+        {
+          "id": "n3",
+          "type": "Question",
+          "question": "How urgent is this?",
+          "responseType": "MultipleChoice",
+          "options": ["High - I am completely blocked", "Medium - I have a workaround", "Low - Not urgent"],
+          "outputVariable": "TicketPriority"
+        },
+        {
+          "id": "n4",
+          "type": "ActionCall",
+          "actionId": "CreateTicket",
+          "inputs": {
+            "title": "{TicketTitle}",
+            "description": "{TicketDescription}",
+            "priority": "{TicketPriority}",
+            "submitterEmail": "{System.User.Email}"
+          },
+          "outputVariable": "CreatedTicket"
+        },
+        {
+          "id": "n5",
+          "type": "SendMessage",
+          "message": "Your ticket {CreatedTicket.ticketId} has been created and the team has been notified in Microsoft Teams."
+        }
+      ]
+    },
+    {
+      "id": "topic_ticket_status",
+      "name": "Check Ticket Status",
+      "triggerPhrases": ["check my ticket", "ticket status", "update on my ticket", "where is my request"],
+      "nodes": [
+        {
+          "id": "n1",
+          "type": "Question",
+          "question": "Enter your ticket ID (format: TKT-XXXXXXXX).",
+          "responseType": "FreeText",
+          "outputVariable": "QueryTicketId"
+        },
+        {
+          "id": "n2",
+          "type": "ActionCall",
+          "actionId": "GetTicketStatus",
+          "inputs": { "ticketId": "{QueryTicketId}" },
+          "outputVariable": "TicketRecord"
+        },
+        {
+          "id": "n3",
+          "type": "Condition",
+          "conditions": [
+            {
+              "expression": "TicketRecord.found == true",
+              "nodes": [
+                {
+                  "id": "n3a",
+                  "type": "SendMessage",
+                  "message": "Ticket {QueryTicketId}: Status is {TicketRecord.status}, Priority is {TicketRecord.priority}, assigned to {TicketRecord.assignee}."
+                }
+              ]
+            },
+            {
+              "expression": "else",
+              "nodes": [
+                {
+                  "id": "n3b",
+                  "type": "SendMessage",
+                  "message": "No ticket found with ID {QueryTicketId}. Please check the ID and try again."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "pluginActions": [
+    {
+      "id": "CreateTicket",
+      "description": "Creates a new IT support ticket in SharePoint and triggers the routing flow.",
+      "operationId": "CreateTicket",
+      "parameters": [
+        { "name": "title", "type": "string", "required": true },
+        { "name": "description", "type": "string", "required": true },
+        { "name": "priority", "type": "string", "required": false },
+        { "name": "submitterEmail", "type": "string", "required": true }
+      ]
+    },
+    {
+      "id": "GetTicketStatus",
+      "description": "Looks up a ticket by ID from the SharePoint list and returns its current status.",
+      "operationId": "GetTicketStatus",
+      "parameters": [
+        { "name": "ticketId", "type": "string", "required": true }
+      ]
+    }
+  ]
+}

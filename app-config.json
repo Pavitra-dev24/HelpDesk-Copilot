@@ -1,0 +1,34 @@
+{
+  "appName": "HelpDesk Copilot App",
+  "targetPlatform": "PowerApps Canvas",
+  "description": "Canvas app for IT support ticket submission and tracking. Uses SharePoint as the data source and Power Automate for automation.",
+  "dataConnections": [
+    {
+      "id": "conn_sharepoint",
+      "type": "SharePoint",
+      "siteUrl": "https://yourcompany.sharepoint.com/sites/ITSupport",
+      "listName": "Tickets"
+    },
+    {
+      "id": "conn_office365users",
+      "type": "Office365Users"
+    }
+  ],
+  "globalVariables": [
+    { "name": "gCurrentUser", "initExpression": "Office365Users.MyProfile()" }
+  ],
+  "collections": [
+    {
+      "name": "colPriorityOptions",
+      "initExpression": "ClearCollect(colPriorityOptions, {Value: \"High\"}, {Value: \"Medium\"}, {Value: \"Low\"})"
+    },
+    {
+      "name": "colCategoryOptions",
+      "initExpression": "ClearCollect(colCategoryOptions, {Value: \"Network\"}, {Value: \"Hardware\"}, {Value: \"Software\"}, {Value: \"Access\"}, {Value: \"Email\"}, {Value: \"General\"})"
+    }
+  ],
+  "screens": [
+    { "name": "TicketFormScreen", "file": "screens/TicketForm.yaml", "isStartScreen": true },
+    { "name": "TicketListScreen", "purpose": "Browse tickets submitted by the current user" }
+  ]
+}

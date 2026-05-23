@@ -1,0 +1,180 @@
+- TicketFormScreen:
+    Control: Screen
+    Properties:
+      Fill: =RGBA(245, 247, 250, 1)
+    Children:
+      - Header:
+          Control: GroupContainer
+          Properties:
+            X: =0
+            Y: =0
+            Width: =Parent.Width
+            Height: =56
+            Fill: =RGBA(0, 120, 212, 1)
+          Children:
+            - HeaderTitle:
+                Control: Label
+                Properties:
+                  X: =16
+                  Y: =14
+                  Width: =400
+                  Height: =28
+                  Text: ="HelpDesk Copilot"
+                  Color: =RGBA(255, 255, 255, 1)
+                  FontWeight: =FontWeight.Bold
+                  Size: =16
+            - UserLabel:
+                Control: Label
+                Properties:
+                  X: =Parent.Width - 220
+                  Y: =14
+                  Width: =210
+                  Height: =28
+                  Text: =gCurrentUser.DisplayName
+                  Color: =RGBA(255, 255, 255, 1)
+                  Align: =Align.Right
+
+      - FormCard:
+          Control: GroupContainer
+          Properties:
+            X: =Parent.Width / 2 - 340
+            Y: =80
+            Width: =680
+            Height: =500
+            Fill: =RGBA(255, 255, 255, 1)
+            BorderRadius: =6
+            DropShadow: =DropShadow.Light
+          Children:
+            - TitleLabel:
+                Control: Label
+                Properties:
+                  X: =24
+                  Y: =24
+                  Width: =200
+                  Height: =22
+                  Text: ="Issue Title"
+                  FontWeight: =FontWeight.Semibold
+
+            - TitleInput:
+                Control: TextInput
+                Properties:
+                  X: =24
+                  Y: =50
+                  Width: =632
+                  Height: =44
+                  HintText: ="e.g. Cannot connect to VPN"
+                  MaxLength: =200
+                  BorderColor: =RGBA(200, 200, 200, 1)
+                  FocusedBorderColor: =RGBA(0, 120, 212, 1)
+
+            - DescriptionLabel:
+                Control: Label
+                Properties:
+                  X: =24
+                  Y: =110
+                  Width: =200
+                  Height: =22
+                  Text: ="Description"
+                  FontWeight: =FontWeight.Semibold
+
+            - DescriptionInput:
+                Control: TextInput
+                Properties:
+                  X: =24
+                  Y: =136
+                  Width: =632
+                  Height: =110
+                  HintText: ="Describe the issue. Include any error messages or steps already tried."
+                  Mode: =TextMode.MultiLine
+                  MaxLength: =2000
+                  BorderColor: =RGBA(200, 200, 200, 1)
+                  FocusedBorderColor: =RGBA(0, 120, 212, 1)
+
+            - PriorityLabel:
+                Control: Label
+                Properties:
+                  X: =24
+                  Y: =262
+                  Width: =140
+                  Height: =22
+                  Text: ="Priority"
+                  FontWeight: =FontWeight.Semibold
+
+            - PriorityDropdown:
+                Control: Dropdown
+                Properties:
+                  X: =24
+                  Y: =288
+                  Width: =300
+                  Height: =44
+                  Items: =colPriorityOptions
+                  Value: ="Value"
+
+            - CategoryLabel:
+                Control: Label
+                Properties:
+                  X: =356
+                  Y: =262
+                  Width: =140
+                  Height: =22
+                  Text: ="Category"
+                  FontWeight: =FontWeight.Semibold
+
+            - CategoryDropdown:
+                Control: Dropdown
+                Properties:
+                  X: =356
+                  Y: =288
+                  Width: =300
+                  Height: =44
+                  Items: =colCategoryOptions
+                  Value: ="Value"
+
+            - SubmitButton:
+                Control: Button
+                Properties:
+                  X: =24
+                  Y: =420
+                  Width: =180
+                  Height: =48
+                  Text: ="Submit Ticket"
+                  Fill: =RGBA(0, 120, 212, 1)
+                  Color: =RGBA(255, 255, 255, 1)
+                  FontWeight: =FontWeight.Bold
+                  BorderRadius: =4
+                  OnSelect: |
+                    =If(
+                      IsBlank(TitleInput.Text) || IsBlank(DescriptionInput.Text),
+                      Notify("Please fill in Title and Description.", NotificationType.Error),
+                      Patch(
+                        Tickets,
+                        Defaults(Tickets),
+                        {
+                          TicketTitle: TitleInput.Text,
+                          Description: DescriptionInput.Text,
+                          Priority: PriorityDropdown.SelectedText.Value,
+                          Category: CategoryDropdown.SelectedText.Value,
+                          Submitter: gCurrentUser.Mail,
+                          Status: "open",
+                          CreatedAt: Now()
+                        }
+                      );
+                      Notify("Ticket submitted. You will receive a Teams notification shortly.", NotificationType.Success);
+                      Reset(TitleInput);
+                      Reset(DescriptionInput)
+                    )
+
+            - MyTicketsButton:
+                Control: Button
+                Properties:
+                  X: =220
+                  Y: =420
+                  Width: =160
+                  Height: =48
+                  Text: ="My Tickets"
+                  Fill: =RGBA(255, 255, 255, 1)
+                  Color: =RGBA(0, 120, 212, 1)
+                  BorderColor: =RGBA(0, 120, 212, 1)
+                  BorderThickness: =1
+                  BorderRadius: =4
+                  OnSelect: =Navigate(TicketListScreen, ScreenTransition.Fade)

@@ -1,0 +1,62 @@
+{
+  "name": "Ticket Routing Flow",
+  "description": "Triggers when a new item is added to the SharePoint Tickets list. Looks up the submitter via Microsoft Graph API, posts a Teams notification, and sends a confirmation email.",
+  "trigger": {
+    "type": "SharePointOnNewItem",
+    "inputs": {
+      "siteUrl": "@parameters('SharePointSiteUrl')",
+      "listId": "@parameters('TicketsListId')"
+    }
+  },
+  "actions": [
+    {
+      "id": "get_submitter",
+      "name": "Get Submitter Profile",
+      "type": "Office365Users.GetUser",
+      "inputs": {
+        "userId": "@triggerOutputs()?['body/Submitter']"
+      }
+    },
+    {
+      "id": "post_teams_message",
+      "name": "Post Teams Notification",
+      "type": "MicrosoftTeams.PostMessage",
+      "runAfter": ["get_submitter"],
+      "inputs": {
+        "teamId": "@parameters('TeamsTeamId')",
+        "channelId": "@parameters('TeamsChannelId')",
+        "message": "<b>New Ticket - @{triggerOutputs()?['body/Title']}</b><br/>Title: @{triggerOutputs()?['body/TicketTitle']}<br/>Priority: @{triggerOutputs()?['body/Priority']}<br/>Submitted by: @{body('get_submitter')?['displayName']}<br/>Assigned to: @{triggerOutputs()?['body/Assignee']}"
+      }
+    },
+    {
+      "id": "send_confirmation_email",
+      "name": "Send Confirmation Email",
+      "type": "Office365.SendEmail",
+      "runAfter": ["post_teams_message"],
+      "inputs": {
+        "to": "@triggerOutputs()?['body/Submitter']",
+        "subject": "Ticket @{triggerOutputs()?['body/Title']} Received",
+        "body": "<p>Hi @{body('get_submitter')?['displayName']},</p><p>Your ticket has been received and assigned to @{triggerOutputs()?['body/Assignee']}. Priority: @{triggerOutputs()?['body/Priority']}.</p><p>We will be in touch soon.</p>",
+        "isHtml": true
+      }
+    },
+    {
+      "id": "update_status",
+      "name": "Update Ticket Status to In Progress",
+      "type": "SharePoint.UpdateItem",
+      "runAfter": ["send_confirmation_email"],
+      "inputs": {
+        "siteUrl": "@parameters('SharePointSiteUrl')",
+        "listId": "@parameters('TicketsListId')",
+        "itemId": "@triggerOutputs()?['body/ID']",
+        "fields": { "Status": "in_progress" }
+      }
+    }
+  ],
+  "parameters": {
+    "SharePointSiteUrl": { "type": "string" },
+    "TicketsListId": { "type": "string" },
+    "TeamsTeamId": { "type": "string" },
+    "TeamsChannelId": { "type": "string" }
+  }
+}
