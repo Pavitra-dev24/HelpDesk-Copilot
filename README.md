@@ -114,7 +114,3 @@ pytest tests/ -v
 | `TEAMS_CHANNEL_ID` | Teams channel ID |
 
 ---
-
-## License
-
-MIT
